@@ -44,7 +44,7 @@ The following operators are supported:
 | ()     | operation grouping    |
 | !      | logical negation      |
 | &&     | logical and           |
-| ||     | logical or            |
+| &#124;&#124;     | logical or            |
 | ==     | logical equals        |
 | !=     | logical not equals    |
 | *=     | wildcard match        |
