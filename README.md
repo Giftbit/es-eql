@@ -65,19 +65,17 @@ All comparison operators must work against a literal value.  For example `threat
 eg:
 
 ```typescript
-function isValidField(field: string): boolean {
-    switch (field) {
-        case "x":
-        case "z.a":
-        case "z.b":
-        case "z.c":
-            return true;
-    }
-    return false;
-}
-
 const options = {
-    fieldVerifier: isValidField
+    fieldVerifier: function (field) {
+       switch (field) {
+           case "x":
+           case "z.a":
+           case "z.b":
+           case "z.c":
+               return true;
+       }
+       return false;
+   }
 };
 
 // valid
