@@ -8,7 +8,7 @@
     "dist/"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "rimraf node_modules/jsep/typings/tsd.d.ts && tsc",
     "clean": "rimraf ./dist",
     "docs": "rimraf ./docs && typedoc src/ --out docs --mode modules --module commonjs --target es6 --excludePrivate --name es-eql && touch ./docs/.nojekyll && gh-pages -d docs -t",
     "lint": "tslint --project tsconfig.json",

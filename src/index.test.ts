@@ -10,6 +10,22 @@ describe("esQueryBuilder", () => {
         chai.assert.throw(() => {
             esQueryBuilder.buildElasticsearchQuery("value = 100");
         }, QueryBuilderError);
+
+        chai.assert.throw(() => {
+            esQueryBuilder.buildElasticsearchQuery("value += 100");
+        }, QueryBuilderError);
+
+        chai.assert.throw(() => {
+            esQueryBuilder.buildElasticsearchQuery("value -= 100");
+        }, QueryBuilderError);
+
+        chai.assert.throw(() => {
+            esQueryBuilder.buildElasticsearchQuery("value++");
+        }, QueryBuilderError);
+
+        chai.assert.throw(() => {
+            esQueryBuilder.buildElasticsearchQuery("value--");
+        }, QueryBuilderError);
     });
 
     it("doesn't allow compound expressions", () => {
