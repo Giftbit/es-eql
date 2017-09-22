@@ -2,6 +2,8 @@ import * as jsep from "jsep";
 import {QueryBuilderError} from "./QueryBuilderError";
 import {BuildElasticsearchQueryOptions} from "./BuildElasticsearchQueryOptions";
 
+export {QueryBuilderError};
+
 jsep.removeUnaryOp("~");
 jsep.removeBinaryOp("|");
 jsep.removeBinaryOp("^");
