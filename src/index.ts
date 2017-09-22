@@ -41,18 +41,18 @@ export function buildElasticsearchQuery(queryString: string, options: BuildElast
 function verifyExpression(exp: jsep.Expression, options: BuildElasticsearchQueryOptions): void {
     switch (exp.type) {
         case "ArrayExpression":
-            throw new QueryBuilderError("Arrays are not supported.", exp);
+            throw new QueryBuilderError("Arrays are not supported.", expressionToString(exp));
         case "BinaryExpression":
             verifyExpression((exp as jsep.BinaryExpression).left, options);
             verifyExpression((exp as jsep.BinaryExpression).right, options);
             break;
         case "CallExpression":
-            throw new QueryBuilderError("Function calls are not supported.", exp);
+            throw new QueryBuilderError("Function calls are not supported.", expressionToString(exp));
         case "Compound":
-            throw new QueryBuilderError("Compound statements are not supported.", exp);
+            throw new QueryBuilderError("Compound statements are not supported.", expressionToString(exp));
         case "Identifier":
             if (options.fieldVerifier && !options.fieldVerifier((exp as jsep.Identifier).name)) {
-                throw new QueryBuilderError(`${(exp as jsep.Identifier).name} is not a known field.`, exp);
+                throw new QueryBuilderError(`${(exp as jsep.Identifier).name} is not a known field.`, expressionToString(exp));
             }
             break;
         case "Literal":
@@ -64,11 +64,11 @@ function verifyExpression(exp: jsep.Expression, options: BuildElasticsearchQuery
         case "MemberExpression":
             const memberExpressionIdentifier = memberExpressionToIdentifier(exp as jsep.MemberExpression, options).name;
             if (options.fieldVerifier && !options.fieldVerifier(memberExpressionIdentifier)) {
-                throw new QueryBuilderError(`${memberExpressionIdentifier} is not a known identifier.`, exp);
+                throw new QueryBuilderError(`${memberExpressionIdentifier} is not a known identifier.`, expressionToString(exp));
             }
             return;
         case "ThisExpression":
-            throw new QueryBuilderError("'this' type is not supported.", exp);
+            throw new QueryBuilderError("'this' type is not supported.", expressionToString(exp));
         case "UnaryExpression":
             verifyExpression((exp as jsep.UnaryExpression).argument, options);
             break;
@@ -89,7 +89,7 @@ function expressionToQuery(exp: jsep.Expression, options: BuildElasticsearchQuer
         case "Identifier":
             return identifierToQuery(exp as jsep.Identifier, options);
         case "Literal":
-            throw new QueryBuilderError(`Expected an expression.`, exp);
+            throw new QueryBuilderError(`Expected an expression.`, expressionToString(exp));
         case "LogicalExpression":
             return logicalExpressionToQuery(exp as jsep.LogicalExpression, options);
         case "MemberExpression":
@@ -123,15 +123,15 @@ function binaryExpressionToQuery(exp: jsep.BinaryExpression, options: BuildElast
         case "*=":
         case "!*=":
             if (typeof literal !== "string") {
-                throw new QueryBuilderError(`Cannot apply wildcard operator ${exp.operator} to type ${typeof literal}.`, exp);
+                throw new QueryBuilderError(`Cannot apply wildcard operator ${exp.operator} to type ${typeof literal}.`, expressionToString(exp));
             }
             if (options.wildcard && options.wildcard.enabled === false) {
-                throw new QueryBuilderError(`Wildcard search is disabled.`, exp);
+                throw new QueryBuilderError(`Wildcard search is not available.`, expressionToString(exp));
             }
             if (options.wildcard && options.wildcard.minCharacters) {
                 const unwildCharacters = ((literal as string).match(/[^*?]/g) || []).length;
                 if (unwildCharacters < options.wildcard.minCharacters) {
-                    throw new QueryBuilderError(`Wildcard search must have at least ${options.wildcard.minCharacters} non-wildcard characters.`, exp);
+                    throw new QueryBuilderError(`Wildcard search must have at least ${options.wildcard.minCharacters} non-wildcard characters.`, expressionToString(exp));
                 }
             }
             return maybeNegateQuery({
@@ -142,14 +142,14 @@ function binaryExpressionToQuery(exp: jsep.BinaryExpression, options: BuildElast
         case "~=":
         case "!~=":
             if (typeof literal !== "string") {
-                throw new QueryBuilderError(`Cannot apply fuzzy operator ${exp.operator} to type ${typeof literal}.`, exp);
+                throw new QueryBuilderError(`Cannot apply fuzzy operator ${exp.operator} to type ${typeof literal}.`, expressionToString(exp));
             }
             if (options.fuzzy && options.fuzzy.enabled === false) {
-                throw new QueryBuilderError(`Fuzzy search is disabled.`, exp);
+                throw new QueryBuilderError(`Fuzzy search is not available.`, expressionToString(exp));
             }
             if (options.fuzzy && options.fuzzy.minCharacters) {
                 if ((literal as string).length < options.fuzzy.minCharacters) {
-                    throw new QueryBuilderError(`Fuzzy search must have at least ${options.fuzzy.minCharacters} characters.`, exp);
+                    throw new QueryBuilderError(`Fuzzy search must have at least ${options.fuzzy.minCharacters} characters.`, expressionToString(exp));
                 }
             }
             return maybeNegateQuery({
@@ -205,7 +205,7 @@ function getBinaryExpressionIdentifier(exp: jsep.BinaryExpression, options: Buil
     } else if (exp.right.type === "MemberExpression") {
         return memberExpressionToIdentifier(exp.right as jsep.MemberExpression, options);
     }
-    throw new QueryBuilderError(`Expression does not contain an identifier to compare against.`, exp);
+    throw new QueryBuilderError(`Expression does not contain an identifier to compare against.`, expressionToString(exp));
 }
 
 function getBinaryExpressionLiteral(exp: jsep.BinaryExpression, options: BuildElasticsearchQueryOptions): jsep.Literal {
@@ -218,7 +218,7 @@ function getBinaryExpressionLiteral(exp: jsep.BinaryExpression, options: BuildEl
     } else if (exp.right.type === "UnaryExpression" && (exp.right as jsep.UnaryExpression).argument.type === "Literal") {
         return unaryExpressionToLiteral(exp.right as jsep.UnaryExpression, options);
     }
-    throw new QueryBuilderError(`Expression does not contain a literal (boolean, number, string) to compare against.`, exp);
+    throw new QueryBuilderError(`Expression does not contain a literal (boolean, number, string) to compare against.`, expressionToString(exp));
 }
 
 /**
@@ -268,7 +268,7 @@ function unaryExpressionToQuery(exp: jsep.UnaryExpression, options: BuildElastic
     switch (exp.operator) {
         case "-":
         case "+":
-            throw new QueryBuilderError(`Expression must be a binary expression.`, exp);
+            throw new QueryBuilderError(`Expression must be a binary expression.`, expressionToString(exp));
         case "!": {
             switch (exp.argument.type) {
                 case "BinaryExpression":
@@ -284,7 +284,7 @@ function unaryExpressionToQuery(exp: jsep.UnaryExpression, options: BuildElastic
                         return maybeNegateQuery(expressionToQuery(exp.argument, options), true);
                     }
                 default:
-                    throw new QueryBuilderError(`Cannot apply unary operator ${exp.operator}.`, exp);
+                    throw new QueryBuilderError(`Cannot apply unary operator ${exp.operator}.`, expressionToString(exp));
             }
         }
         default:
@@ -298,7 +298,7 @@ function unaryExpressionToQuery(exp: jsep.UnaryExpression, options: BuildElastic
  */
 function unaryExpressionToLiteral(exp: jsep.UnaryExpression, options: BuildElasticsearchQueryOptions): jsep.Literal {
     if (exp.argument.type !== "Literal") {
-        throw new QueryBuilderError(`Unary expression must have a literal argument.`, exp);
+        throw new QueryBuilderError(`Unary expression must have a literal argument.`, expressionToString(exp));
     }
     const argument = exp.argument as jsep.Literal;
     const argumentValueType = typeof argument.value;
@@ -307,7 +307,7 @@ function unaryExpressionToLiteral(exp: jsep.UnaryExpression, options: BuildElast
         case "-":
         case "+":
             if (argumentValueType !== "number") {
-                throw new QueryBuilderError(`Cannot apply unary operator ${exp.operator} to type ${argumentValueType}.`, exp);
+                throw new QueryBuilderError(`Cannot apply unary operator ${exp.operator} to type ${argumentValueType}.`, expressionToString(exp));
             }
             const value = exp.operator === "-" ? -argument.value : +argument.value;
             return {
@@ -316,7 +316,7 @@ function unaryExpressionToLiteral(exp: jsep.UnaryExpression, options: BuildElast
                 raw: JSON.stringify(value)
             };
         case "!":
-            throw new QueryBuilderError(`Cannot apply unary operator ${exp.operator} to type ${argumentValueType}.`, exp);
+            throw new QueryBuilderError(`Cannot apply unary operator ${exp.operator} to type ${argumentValueType}.`, expressionToString(exp));
         default:
             // Programmer error.
             throw new Error(`Unhandled unary operator ${exp.operator}.`);
@@ -328,10 +328,10 @@ function unaryExpressionToLiteral(exp: jsep.UnaryExpression, options: BuildElast
  */
 function memberExpressionToIdentifier(exp: jsep.MemberExpression, options: BuildElasticsearchQueryOptions): jsep.Identifier {
     if (exp.computed) {
-        throw new QueryBuilderError("Computed member expressions are not supported.", exp);
+        throw new QueryBuilderError("Computed member expressions are not supported.", expressionToString(exp));
     }
     if (exp.object.type !== "Identifier") {
-        throw new QueryBuilderError(`Unsupported member expression object type ${exp.object.type}.`, exp);
+        throw new QueryBuilderError(`Unsupported member expression object type ${exp.object.type}.`, expressionToString(exp));
     }
 
     switch (exp.property.type) {
@@ -346,7 +346,7 @@ function memberExpressionToIdentifier(exp: jsep.MemberExpression, options: Build
                 name: `${(exp.object as jsep.Identifier).name}.${memberExpressionToIdentifier(exp.property as jsep.MemberExpression, options).name}`
             };
         default:
-            throw new QueryBuilderError(`Unsupported member expression property type ${exp.object.type}.`, exp);
+            throw new QueryBuilderError(`Unsupported member expression property type ${exp.object.type}.`, expressionToString(exp));
     }
 }
 
@@ -359,5 +359,48 @@ function maybeNegateQuery(query: Object, negate: boolean): Object {
         };
     } else {
         return query;
+    }
+}
+
+/**
+ * Get the Expression as parsed in string form.
+ * @param exp
+ * @returns a string representation of the Expression
+ */
+function expressionToString(exp: jsep.Expression): string {
+    switch (exp.type) {
+        case "ArrayExpression":
+            return `[${(exp as jsep.ArrayExpression).elements.map(expressionToString).join(", ")}]`;
+        case "BinaryExpression":
+        case "LogicalExpression":
+            const binaryExpression = exp as jsep.BinaryExpression | jsep.LogicalExpression;
+            return `${expressionToString(binaryExpression.left)} ${binaryExpression.operator} ${expressionToString(binaryExpression.right)}`;
+        case "CallExpression":
+            return `${expressionToString((exp as jsep.CallExpression).callee)}(${(exp as jsep.CallExpression).arguments.map(expressionToString).join(", ")})`;
+        case "Compound":
+            return (exp as jsep.Compound).body.map(expressionToString).join(", ");
+        case "ConditionalExpression":
+            return `${(exp as jsep.ConditionalExpression).test} ? ${(exp as jsep.ConditionalExpression).consequent} : ${(exp as jsep.ConditionalExpression).alternate}`;
+        case "Identifier":
+            return (exp as jsep.Identifier).name;
+        case "Literal":
+            return (exp as jsep.Literal).value.toString();
+        case "MemberExpression":
+            if ((exp as jsep.MemberExpression).computed) {
+                return `${expressionToString((exp as jsep.MemberExpression).object)}[${expressionToString((exp as jsep.MemberExpression).property)}]`;
+            } else {
+                return `${expressionToString((exp as jsep.MemberExpression).object)}.${expressionToString((exp as jsep.MemberExpression).property)}`;
+            }
+        case "ThisExpression":
+            return "this";
+        case "UnaryExpression":
+            const unaryExpression = exp as jsep.UnaryExpression;
+            const prefix = unaryExpression.prefix ? unaryExpression.operator : "";
+            const argument = expressionToString(unaryExpression.argument);
+            const postfix = unaryExpression.prefix ? "" : unaryExpression.operator;
+            return `${prefix}(${argument})${postfix}`;
+        default:
+            // User should never see this.
+            throw new Error(`Unprocessable jsep expression type: ${exp.type}.`);
     }
 }

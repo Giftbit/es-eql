@@ -58,6 +58,8 @@ The following operators are supported:
 
 All comparison operators must work against a literal value.  For example `threat.level > 5` and `flavor == 'chocolate'` are valid.  `flavor == color` is not valid because Elasticsearch does not allow comparing values within a document.
 
+Existence of a field can be required with the field name and no operator (JavaScript-style truthiness).  Non existence of a field can be required by negating the field.  eg: `environment`, `!environment`.
+
 ### Field verification
 
 `buildElasticsearchQuery` accepts an options param that can verify whether a field name is valid.
@@ -79,10 +81,9 @@ const options = {
 };
 
 // valid
-eseql.buildElasticsearchQuery("x == 1");    
-eseql.buildElasticsearchQuery("z.a == 1 && z.b != -2");
+eseql.buildElasticsearchQuery("x == 1", options);    
+eseql.buildElasticsearchQuery("z.a == 1 && z.b != -2", options);
 
 // invalid
-eseql.buildElasticsearchQuery("y == 9");
-
+eseql.buildElasticsearchQuery("y == 9", options);
 ```
