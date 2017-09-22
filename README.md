@@ -27,7 +27,9 @@ const es = new elasticsearch.Client({
 es.search({
     index: "myindex",
     type: "mytype",
-    body: eseql.buildElasticsearchQuery("environment == 'production' && (tag == 'http' || tag == 'ftp')")
+    body: {
+        query: eseql.buildElasticsearchQuery("environment == 'production' && (tag == 'http' || tag == 'ftp')")
+    }
 }).then(result => {
     console.log("search result", result.hits.hits.map(d => d._source));
 }, error => {
