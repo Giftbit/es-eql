@@ -160,30 +160,29 @@ es.search({
 					</tbody>
 				</table>
 				<p>All comparison operators must work against a literal value.  For example <code>threat.level &gt; 5</code> and <code>flavor == &#39;chocolate&#39;</code> are valid.  <code>flavor == color</code> is not valid because Elasticsearch does not allow comparing values within a document.</p>
+				<p>Existence of a field can be required with the field name and no operator (JavaScript-style truthiness).  Non existence of a field can be required by negating the field.  eg: <code>environment</code>, <code>!environment</code>.</p>
 				<h3 id="field-verification">Field verification</h3>
 				<p><code>buildElasticsearchQuery</code> accepts an options param that can verify whether a field name is valid.</p>
 				<p>eg:</p>
-				<pre><code class="lang-typescript"><span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">isValidField</span>(<span class="hljs-params">field: <span class="hljs-built_in">string</span></span>): <span class="hljs-title">boolean</span> </span>{
-    <span class="hljs-keyword">switch</span> (field) {
-        <span class="hljs-keyword">case</span> <span class="hljs-string">"x"</span>:
-        <span class="hljs-keyword">case</span> <span class="hljs-string">"z.a"</span>:
-        <span class="hljs-keyword">case</span> <span class="hljs-string">"z.b"</span>:
-        <span class="hljs-keyword">case</span> <span class="hljs-string">"z.c"</span>:
-            <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;
-    }
-    <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;
-}
-
-<span class="hljs-keyword">const</span> options = {
-    fieldVerifier: isValidField
+				<pre><code class="lang-typescript"><span class="hljs-keyword">const</span> options = {
+    fieldVerifier: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">field</span>) </span>{
+       <span class="hljs-keyword">switch</span> (field) {
+           <span class="hljs-keyword">case</span> <span class="hljs-string">"x"</span>:
+           <span class="hljs-keyword">case</span> <span class="hljs-string">"z.a"</span>:
+           <span class="hljs-keyword">case</span> <span class="hljs-string">"z.b"</span>:
+           <span class="hljs-keyword">case</span> <span class="hljs-string">"z.c"</span>:
+               <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;
+       }
+       <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;
+   }
 };
 
 <span class="hljs-comment">// valid</span>
-eseql.buildElasticsearchQuery(<span class="hljs-string">"x == 1"</span>);    
-eseql.buildElasticsearchQuery(<span class="hljs-string">"z.a == 1 &amp;&amp; z.b != -2"</span>);
+eseql.buildElasticsearchQuery(<span class="hljs-string">"x == 1"</span>, options);    
+eseql.buildElasticsearchQuery(<span class="hljs-string">"z.a == 1 &amp;&amp; z.b != -2"</span>, options);
 
 <span class="hljs-comment">// invalid</span>
-eseql.buildElasticsearchQuery(<span class="hljs-string">"y == 9"</span>);
+eseql.buildElasticsearchQuery(<span class="hljs-string">"y == 9"</span>, options);
 </code></pre>
 			</div>
 		</div>
